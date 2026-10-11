@@ -1,3 +1,11 @@
+###
+
+# Install options for code:
+
+#  Loading libraries: 'os', 'dotenv', 'time', 'web3', 'logger' 
+
+###
+
 from os import getenv # получить переменную из .env файла окружения
 from dotenv import load_dotenv # загрузка окружения в данной папке (окружение - .env файл)
 import logging # библиотека для красивого вывода данных с форматированием
@@ -7,14 +15,26 @@ from web3 import Web3, HTTPProvider # Библиотека для работы �
 
 from logger import setup_logging # Наша собственная библиотека 
 
+###
+
+# Configuring logging
+
+###
+
 logger = setup_logging(logging.DEBUG)
 
 load_dotenv()
 
+###
+
+# Assign API key values ​​and set a limit
+
+###
+
+
 API_KEY = getenv("API_KEY")
 LIMIT = int(getenv("LIMIT"))
 
-provider = Web3(HTTPProvider(API_KEY))
 
 # logger.debug(provider.eth.block_number) # DEBUG - для отладки (информация, нужная только разрабу для своих тестов)
 # logger.info(provider.eth.block_number) # INFO - Обычная информация о том что происходит
@@ -26,26 +46,30 @@ provider = Web3(HTTPProvider(API_KEY))
 # Задача: Мы должны в живом времени сканировать N блоков 
 # и собирать с них все транзакции + расшифровывать их
 
-last_block = provider.eth.block_number # последний блок
-target_block = last_block + LIMIT # лимит (я поставил 50)
-latest_block = 0
+class BlockchainScanner:
 
-while last_block <= target_block:
-    block = provider.eth.get_block("latest",full_transactions=True) # Получаем данные последнего блока + транзакции
+    def __init__(self, api_key, limit):
 
-    last_block = block["number"]
+        self.api_key = api_key
+        self.limit = limit
 
-    if latest_block < last_block:
-        latest_block = last_block
-
-        
-    sleep(1)
+        self.provider = Web3(HTTPProvider(api_key))
+        self.last_block = self.provider.eth.block_number # последний блок
+        self.target_block = self.last_block + LIMIT # лимит (я поставил 50)
+        self.latest_block = 0
 
 
+    def scan(self):
 
-a = {"hello":"world"}
+        while self.last_block <= self.target_block:
 
-word = a["hello"]
+            block = self.provider.eth.get_block("latest",full_transactions=True) # Получаем данные последнего блока + транзакции
+            self.last_block = block["number"]
 
-print(word)
-print(word)
+            if self.latest_block < self.last_block:
+                self.latest_block = self.last_block
+            
+            sleep(1)
+
+scanner = BlockchainScanner(API_KEY, LIMIT)
+scanner.scan()
