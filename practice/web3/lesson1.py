@@ -35,6 +35,7 @@ load_dotenv()
 API_KEY = getenv("API_KEY")
 LIMIT = int(getenv("LIMIT"))
 
+provider = Web3(HTTPProvider(API_KEY))
 
 # logger.debug(provider.eth.block_number) # DEBUG - для отладки (информация, нужная только разрабу для своих тестов)
 # logger.info(provider.eth.block_number) # INFO - Обычная информация о том что происходит
@@ -73,6 +74,7 @@ class BlockchainScanner:
 
 scanner = BlockchainScanner(API_KEY, LIMIT)
 scanner.scan()
+
 def get_data(hash:str):
     receipt = provider.eth.get_transaction_receipt(hash)
     print(receipt["gasUsed"]*receipt["effectiveGasPrice"] * 10**-18)
