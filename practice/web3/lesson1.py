@@ -30,22 +30,30 @@ last_block = provider.eth.block_number # последний блок
 target_block = last_block + LIMIT # лимит (я поставил 50)
 latest_block = 0
 
-while last_block <= target_block:
-    block = provider.eth.get_block("latest",full_transactions=True) # Получаем данные последнего блока + транзакции
-
-    last_block = block["number"]
-
-    if latest_block < last_block:
-        latest_block = last_block
-
-        
-    sleep(1)
+def get_data(hash:str):
+    receipt = provider.eth.get_transaction_receipt(hash)
+    print(receipt["gasUsed"]*receipt["effectiveGasPrice"] * 10**-18)
+    
 
 
+get_data("0x67906ff04bd249d67902609fa5b98d6f228df110d26c03f07060f59df31951db")
 
-a = {"hello":"world"}
-
-word = a["hello"]
-
-print(word)
-print(word)
+# TODO: Доработать
+# BUG: 
+# while last_block <= target_block:
+#     block = provider.eth.get_block("latest",full_transactions=True) # Получаем данные последнего блока + транзакции
+# 
+#     last_block = block["number"]
+# 
+#     if latest_block < last_block:
+#         latest_block = last_block
+#         for transaction in block["transactions"]:
+#             from_user = transaction["from"]
+#             to_user = transaction["to"] 
+#             transaction["maxPriorityFeePerGas"]
+#             print(transaction["hash"].to_0x_hex())
+# 
+# 
+# 
+#         
+#     sleep(1)
