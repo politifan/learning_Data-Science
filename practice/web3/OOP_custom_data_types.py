@@ -9,11 +9,18 @@ class Transaction(TypedDict):
     recipient: str
     timestamp: float
 
+# TEST: проверил то что работает класс
+trx = {"ammount":16,"sender":"i am", "reciepent":"you","timestamp":12.1}
+trx = Transaction(trx)
+
 class Transactions(TypedDict):
-    transactions: Transaction
+    # BUG: Transacitions = Transaction. Ты сделал 2 одинаковых типа данных, а не список тразнакций
+    # Должно быть скорее всего так: transactions:list[Transaction]
+    transactions:list[Transaction]
 
 class Block(TypedDict):
     block_number: int
+    # BUG: тоже самое
     transactions: Transactions
 
 
@@ -35,9 +42,6 @@ print(result)
 
 
 ### Разбор typing
-
-
-python.py
 from typing import List, Dict, Union
 
 matrix_data: List[float] = [1.5, 2.5, 3.5]
