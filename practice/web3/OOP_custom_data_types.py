@@ -4,6 +4,14 @@ from time import time
 print(time())
 
 class Transaction(TypedDict):
+    """_summary_
+
+    Args:
+        amount: (int)
+        sender: (str)
+        recipient: (str)
+        timestamp: (float)
+    """
     amount: int
     sender: str
     recipient: str

@@ -14,6 +14,7 @@ from time import sleep
 from web3 import Web3, HTTPProvider # Библиотека для работы с криптовалютой
 
 from logger import setup_logging # Наша собственная библиотека 
+from OOP_custom_data_types import Transaction
 
 ###
 
@@ -33,7 +34,6 @@ load_dotenv()
 
 ###
 
-
 API_KEY = getenv("API_KEY")
 LIMIT = int(getenv("LIMIT"))
 
@@ -48,8 +48,6 @@ provider = Web3(HTTPProvider(API_KEY))
 
 # Задача: Мы должны в живом времени сканировать N блоков 
 # и собирать с них все транзакции + расшифровывать их
-
-
 
 class BlockchainScanner:
     """
@@ -86,14 +84,25 @@ class BlockchainScanner:
         self.fees = []
         self.transactions_data = []
 
+    def get_trx_data(self,hash:str) -> Transaction:
+        """Получает данные о транзакции
+
+        Args:
+            hash (str): номер транзакции ETH
+
+        Returns:
+            Transaction: данные транзакции (см. файл OOP_custom_data_types)
+        Examples:
+        Пример 1
+        ```python
+        data = BlockchainScanner.get_trx_data("....")
+        print(data.amount)
+        ```
+        """
+        ...
 
     def get_transaction_fee(self, tx_hash):
-
-        """
-        Получает квитанцию транзакции и рассчитывает комиссию.
-        Gets the transaction receipt and calculates the transaction fee.
-
-        """
+        
 
         # Получаем квитанцию по хэшу транзакции | Get the receipt using the transaction hash | receipt - квитанция транзакции
 
@@ -156,7 +165,8 @@ class BlockchainScanner:
 
                     # Создаём запись с нужными данными транзакции
                     # Create a record containing the required transaction data
-    
+
+                    # TODO: Оберни в отдельный тип данных по типу Transaction
                     transaction_data = {
                         "hash": transaction["hash"],
                         "fee_wei": fee_wei,
@@ -167,6 +177,9 @@ class BlockchainScanner:
                     # Add the record to the collection
     
                     self.transactions_data.append(transaction_data)
+
+                    return self.transactions_data
+                
     def calculate_average_fee(self):
         """
 
@@ -222,7 +235,6 @@ class BlockchainScanner:
         max_fees, min_fees = max(fees_for_min_max), min(fees_for_min_max)
 
         return max_fees, min_fees        
-
 
    
 # Создаём сканер с настройками из .env | Create a scanner using settings from .env
