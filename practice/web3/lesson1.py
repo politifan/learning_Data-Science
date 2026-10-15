@@ -10,6 +10,7 @@ from os import getenv # получить переменную из .env файл
 from dotenv import load_dotenv # загрузка окружения в данной папке (окружение - .env файл)
 import logging # библиотека для красивого вывода данных с форматированием
 from time import sleep
+from math import sqrt
 
 from web3 import Web3, HTTPProvider # Библиотека для работы с криптовалютой
 
@@ -58,7 +59,14 @@ class BlockchainScanner:
 
     """
 
-    def __init__(self, api_key, limit):
+    def __init__(self, api_key, limit: int):
+        """ Initialize the blockchain scanner.
+
+        Args:
+            api_key (_type_): _description_
+            limit (_type_): _description_
+        """
+
 
         # Сохраняем настройки внутри объекта | Store settings inside the object
 
@@ -87,12 +95,15 @@ class BlockchainScanner:
         self.transactions_data = []
 
 
-    def get_transaction_fee(self, tx_hash):
+    def get_transaction_fee(self, tx_hash:str) -> float:
 
-        """
-        Получает квитанцию транзакции и рассчитывает комиссию.
-        Gets the transaction receipt and calculates the transaction fee.
+        """ Function for obtaining the transaction fee
 
+        Args: 
+            str: the transaction hash
+
+        Returns:
+            float: the calculated fee
         """
 
         # Получаем квитанцию по хэшу транзакции | Get the receipt using the transaction hash | receipt - квитанция транзакции
@@ -167,12 +178,12 @@ class BlockchainScanner:
                     # Add the record to the collection
     
                     self.transactions_data.append(transaction_data)
-    def calculate_average_fee(self):
-        """
+    def calculate_average_fee(self) -> float | None:
 
-        Рассчитываем среднюю комиссию.
-        Calculates the average transaction fee.
+        """Calculates the average transaction fee.
 
+        Returns:
+            float | None: The average fee in wei, or None if no data exists.
         """
 
         # Проверяем, есть ли собранные транзакции
@@ -200,7 +211,14 @@ class BlockchainScanner:
 
         return average_fee
 
-    def calculate_min_max_fee(self):
+    def calculate_min_max_fee(self) -> float | None:
+
+        """ find the maximum and minimum commissions
+
+        Returns:
+            float | None: Max and min fee in wei, or None if no data exists.
+
+        """
 
         # Проверяем, есть ли собранные транзакции
         # Check whether any transactions were collected
@@ -222,6 +240,134 @@ class BlockchainScanner:
         max_fees, min_fees = max(fees_for_min_max), min(fees_for_min_max)
 
         return max_fees, min_fees        
+    
+    def calculate_fee_variance(self) -> float | None:
+        """ 
+        Calculate the population variance of transaction fees.
+        Рассчитывает дисперсию комиссий собранных транзакций.
+
+        Args: list - словарь списков транзакций transactions_data
+
+        Returns:
+            float | None: готовая дисперсия в wei ^2 or None if no data exists.
+        """
+
+        # Проверяем, есть ли собранные транзакции
+        # Check whether any transactions were collected
+        if not self.transactions_data:
+            logger.warning("Нет данных для расчёта дисперсии")
+            return None
+
+        # Извлекаем комиссии всех транзакций
+        # Extract fees from all transactions
+        fees = []
+
+        for transaction in self.transactions_data:
+            fees.append(transaction["fee_wei"])
+
+        # Рассчитываем среднее арифметическое
+        # Calculate the arithmetic mean
+        average_fee = sum(fees) / len(fees)
+
+        # Суммируем квадраты отклонений от среднего
+        # Sum the squared deviations from the mean
+        squared_deviations_sum = 0
+
+        for fee in fees:
+            difference = fee - average_fee
+            squared_deviations_sum += difference ** 2
+
+        # Делим сумму квадратов отклонений на количество значений
+        # Divide the sum of squared deviations by the number of values
+        variance = squared_deviations_sum / len(fees)
+
+        # Возвращаем дисперсию в wei в кввадрате
+        # Return the variance in wei squared
+        return variance
+    
+    def calculate_fee_input_correlation(self) -> float | None:
+        """ 
+        Calculate the correlation between transaction fees and input sizes.
+        Рассчитывает корреляцию между комиссиями и размерами input.
+
+        Returns:
+            float | None: готовая корреляция значений | ready-made correlation of values or None if no data exists.
+        """
+
+        # Проверяем, есть ли минимум две транзакции.
+        # Check whether at least two transactions are available.
+        if len(self.transactions_data) < 2:
+            logger.warning("Недостаточно транзакций для корреляции")
+            return None
+
+        # Создаём пустые списки для комиссий и размеров input.
+        # Create empty lists for fees and input sizes.
+        fees = []
+        input_sizes = []
+
+        # Перебираем все собранные транзакции.
+        # Iterate through all collected transactions.
+        for transaction in self.transactions_data:
+            # Добавляем комиссию в список.
+            # Add the fee to the list.
+            fees.append(transaction["fee_wei"])
+
+            # Добавляем размер input в список.
+            # Add the input size to the list.
+            input_sizes.append(transaction["input_size_bytes"])
+
+        average_fee = sum(fees) / len(fees)
+        average_sizes = sum(input_sizes) / len(input_sizes)
+
+        # Создаём накопители для расчёта корреляции.
+        # Initialize accumulators for the correlation calculation.
+        numerator = 0
+        fee_squared_deviations = 0
+        size_squared_deviations = 0
+
+        # Сопоставляем каждую комиссию с размером input той же транзакции.
+        # Pair each fee with the input size of the same transaction.
+        for fee, input_size in zip(fees, input_sizes):
+
+            # Находим отклонение комиссии от среднего.
+            # Calculate the fee's deviation from its mean.
+            fee_difference = fee - average_fee
+
+            # Находим отклонение размера input от среднего.
+            # Calculate the input size's deviation from its mean.
+            size_difference = input_size - average_sizes
+
+            # Суммируем произведения парных отклонений.
+            # Sum the products of paired deviations.
+            numerator += fee_difference * size_difference
+
+            # Суммируем квадраты отклонений комиссий.
+            # Sum the squared deviations of fees.
+            fee_squared_deviations += fee_difference ** 2
+
+            # Суммируем квадраты отклонений размеров input.
+            # Sum the squared deviations of input sizes.
+            size_squared_deviations += size_difference ** 2
+
+        # Вычисляем знаменатель формулы корреляции.
+        # Calculate the denominator of the correlation formula.
+        denominator = sqrt(
+            fee_squared_deviations * size_squared_deviations
+        )
+
+        # Проверяем, не равен ли знаменатель нулю.
+        # Check whether the denominator is zero.
+        if denominator == 0:
+            logger.warning("Корреляция не определена")
+            return None
+
+        # Вычисляем коэффициент корреляции Пирсона.
+        # Calculate the Pearson correlation coefficient.
+        correlation = numerator / denominator
+
+        # Возвращаем рассчитанный коэффициент.
+        # Return the calculated coefficient.
+        return correlation
 
 
    
@@ -264,3 +410,17 @@ if average_fee is not None:
 
     print(f"Средняя комиссия: {average_fee} wei")
     print(f"Средняя комиссия: {average_fee / 10**18:.18f} ETH")
+
+variance = scanner.calculate_fee_variance()
+
+if variance is not None:
+    print(f"Дисперсия комиссий: {variance} wei²")
+
+# Вычисляем корреляцию комиссии и размера input
+# Calculate the correlation between fees and input sizes
+correlation = scanner.calculate_fee_input_correlation()
+
+if correlation is not None:
+    print(f"Корреляция комиссии и input: {correlation:.4f}")
+else:
+    print("Не удалось рассчитать корреляцию")
