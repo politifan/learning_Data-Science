@@ -189,7 +189,6 @@ class BlockchainScanner:
                     return self.transactions_data
                 
     def calculate_average_fee(self):
-        """
 
         """Calculates the average transaction fee.
 
@@ -265,9 +264,14 @@ class BlockchainScanner:
 
         # Проверяем, есть ли собранные транзакции
         # Check whether any transactions were collected
+        
+        # assert self.transactions_data, "Нет данных для расчёта дисперсии"
         if not self.transactions_data:
-            logger.warning("Нет данных для расчёта дисперсии")
-            return None
+            #logger.warning("Нет данных для расчёта дисперсии")
+            raise ValueError("Нет данных для расчёта дисперсии")
+        if not(isinstance(self.transactions_data, list)):
+            #logger.warning("Нет данных для расчёта дисперсии")
+            raise TypeError("Невалидный тип данных")
 
         # Извлекаем комиссии всех транзакций
         # Extract fees from all transactions
@@ -279,11 +283,25 @@ class BlockchainScanner:
         # Рассчитываем среднее арифметическое
         # Calculate the arithmetic mean
         average_fee = sum(fees) / len(fees)
-
         # Суммируем квадраты отклонений от среднего
         # Sum the squared deviations from the mean
+        # i = строка (y кордината)
+        # j = столбец (x кордината)
+        B = [1,2,3,4,5,6,7,8,9]
+        A = [[1,2,3],
+             [4,5,6],
+             [7,8,9]]
+        
         squared_deviations_sum = 0
-
+        # a,b > 0
+        # a > b
+        # a - b > 0
+        # X = [1,2,3,4,5,6]
+        # A = [[1,2,3],]
+        # X - avg > 0?
+        # sqrt(X**2 - x**2)
+        # sqrt(x**2) = |x|
+        # 
         for fee in fees:
             difference = fee - average_fee
             squared_deviations_sum += difference ** 2
@@ -349,8 +367,17 @@ class BlockchainScanner:
             size_difference = input_size - average_sizes
 
             # Суммируем произведения парных отклонений.
-            # Sum the products of paired deviations.
-            numerator += fee_difference * size_difference
+            # Sum the products of paired deviations.      
+                                                          # 1) a,b = -5,5
+                                                          # 2) a,b = 5,5
+                                                          # 3) a,b = 3, 10
+                                                          # 4) a,b = -5,-4
+            numerator += fee_difference * size_difference # c = a * b = -25
+                                                          # c = a * b = 25
+                                                          # 5, 2
+                                                          # 5, 1
+                                                          # 5 / 2 = 2.5
+                                                          # 5 / 1 = 5
 
             # Суммируем квадраты отклонений комиссий.
             # Sum the squared deviations of fees.
@@ -363,7 +390,10 @@ class BlockchainScanner:
         # Вычисляем знаменатель формулы корреляции.
         # Calculate the denominator of the correlation formula.
         denominator = sqrt(
-            fee_squared_deviations * size_squared_deviations
+            fee_squared_deviations * size_squared_deviations # d = sqrt(a**2 * b**2) = 25 
+                                                             # d = sqrt(a**2 * b**2) = 25 
+                                                             # c/d = -1
+                                                             # c/d = 1
         )
 
         # Проверяем, не равен ли знаменатель нулю.
