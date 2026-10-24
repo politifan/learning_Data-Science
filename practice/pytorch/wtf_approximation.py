@@ -5,7 +5,7 @@ epsilon = float(input("Введите требуемую точность: "))
 
 def  approx(x:float, epsilon:float) -> float:
     """Разработка кода,  для вычисления аппроксимацию по двум  данным
-
+    
     Args:
         x (float): аргумент,  для которого проверяем аппроксимацию
         epsilon (float): точность   вычисления
@@ -13,8 +13,12 @@ def  approx(x:float, epsilon:float) -> float:
     Returns:
         float: результат  вычислений
     
-    
     """
+    # c^2 = x**3 + x**2 - b**4 - 18
+    # TODO: запомнить формулу отиц. степеней
+    # a ** -b = 1 / (a ** b)
+
+    epsilon = 10 ** -epsilon
     if x == 0:
         return 1.0
     # total - накопленный результат вычислений
@@ -32,7 +36,7 @@ def  approx(x:float, epsilon:float) -> float:
         
     return total
 
-result  = approx(x, epsilon)
+result = approx(x, epsilon)
 exact = math.exp(x)
 print(result)
 print("Точное значение:", exact)
